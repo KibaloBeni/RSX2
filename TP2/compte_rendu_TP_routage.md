@@ -23,24 +23,25 @@
 ---
 
 ### Question 1 — Table de routage initiale des routeurs
-
+![Routeurs](ressources/q1.png)
 **Commandes utilisées :**
 ```bash
 ip route
 ```
 
 **Capture R1 :**
-<!-- Insérer capture ici -->
+![table de R1](ressources/ip_route_R1.png)
 
 **Capture R2 :**
-<!-- Insérer capture ici -->
+![table de R2](ressources/ip_route_R2.png)
 
 **Capture R3 :**
-<!-- Insérer capture ici -->
+
+![table de R3](ressources/ip_route_R3.png)
 
 **Constat :**
 
-> *(Que constatez-vous ? Les tables sont-elles vides ? Pourquoi ?)*
+> On constate que rien ne s'affiche du au fait qu'aucune route n'a encore été configuré
 
 ---
 
@@ -48,34 +49,40 @@ ip route
 
 **Commandes utilisées sur R1 :**
 ```bash
-# À compléter
+ip address add 211.230.193.1/26 dev eth0
+ip address add 211.230.193.129/26 dev eth1
+ip link set dev eth0 up
+ip link set dev eth1 up
 ```
 
 **Commandes utilisées sur R2 :**
 ```bash
-# À compléter
-```
+ip address add 211.230.193.2/26 dev eth0
+ip address add 211.230.193.65/26 dev eth1
+ip link set dev eth0 up
+ip link set dev eth1 up```
 
 **Commandes utilisées sur R3 :**
 ```bash
-# À compléter
+ip address add 211.230.193.130/26 dev eth0
+ip address add 211.230.193.193/26 dev eth1
+ip link set dev eth0 up
+ip link set dev eth1 up
 ```
 
 **Vérification — `ip address` sur R1 :**
-<!-- Insérer capture ici -->
+![routeur r1](ressources/Q2_R1.png)
 
 **Vérification — `ip address` sur R2 :**
-<!-- Insérer capture ici -->
+![routeur r1](ressources/Q2_R2.png)
 
 **Vérification — `ip address` sur R3 :**
-<!-- Insérer capture ici -->
+![routeur r1](ressources/Q2_R3.png)
 
-**Vérification ping :**
-<!-- Insérer capture ici -->
 
 **Explication — comment vérifier que la configuration est correcte :**
 
-> *(Expliquez ce que vous avez vérifié et comment)*
+> `ip address` affiche les IPs, ping vers voisin direct répond.
 
 ---
 
@@ -86,26 +93,20 @@ ip route
 ip route
 ```
 
-**Table de routage R1 :**
-<!-- Insérer capture ici -->
-
-**Table de routage R2 :**
-<!-- Insérer capture ici -->
-
-**Table de routage R3 :**
-<!-- Insérer capture ici -->
+**Table de routage R1 R2 R3 :**
+![table de routage](ressources/Q3.png)
 
 **Pourquoi les tables ne sont-elles pas vides ?**
 
->
+> les tables de routage ne sont pas vide car on y a ajouter les addresse des interfaces
 
 **Particularité des routes déjà présentes :**
 
->
+> Les routes présentes ont la mention **`scope link`** 
 
 **Signification de « scope link » :**
 
->
+> `scope link` = destination accessible directement sur le lien local, sans passerelle
 
 ---
 
@@ -126,17 +127,16 @@ ip route
 # À compléter
 ```
 
-**Table de routage finale R1 :**
-<!-- Insérer capture ici -->
+**Table de routage finale R1 & Vérification pings :**
+![R1](ressources/Q4_R1.png)
 
-**Table de routage finale R2 :**
-<!-- Insérer capture ici -->
+**Table de routage finale R2 & Vérification pings :**
+![R1](ressources/Q4_R2.png)
 
-**Table de routage finale R3 :**
-<!-- Insérer capture ici -->
+**Table de routage finale R3 & Vérification pings :**
+![R1](ressources/Q4_R3.png)
 
-**Vérification pings (vers les 4 réseaux depuis chaque routeur) :**
-<!-- Insérer capture ici -->
+Tous les pings répondent depuis les 3 routeurs.
 
 ---
 
