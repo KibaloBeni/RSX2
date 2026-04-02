@@ -1,7 +1,6 @@
 # Compte-rendu — TP Routage RSX2
-**Nom / Prénom :**  
-**Date :**  
-**Binôme :**  
+**Nom / Prénom :*TAGBA KIBALO BENI*  
+**Binôme :*REGUII Bilel*  
 
 ---
 
@@ -60,7 +59,8 @@ ip link set dev eth1 up
 ip address add 211.230.193.2/26 dev eth0
 ip address add 211.230.193.65/26 dev eth1
 ip link set dev eth0 up
-ip link set dev eth1 up```
+ip link set dev eth1 up
+```
 
 **Commandes utilisées sur R3 :**
 ```bash
@@ -114,17 +114,20 @@ ip route
 
 **Commandes ajoutées sur R1 :**
 ```bash
-# À compléter
+ip route add 211.230.193.64/26 via 211.230.193.2
+ip route add 211.230.193.192/26 via 211.230.193.130
 ```
 
 **Commandes ajoutées sur R2 :**
 ```bash
-# À compléter
+ip route add 211.230.193.128/26 via 211.230.193.1
+ip route add 211.230.193.192/26 via 211.230.193.1
 ```
 
 **Commandes ajoutées sur R3 :**
 ```bash
-# À compléter
+ip route add 211.230.193.0/26 via 211.230.193.129
+ip route add 211.230.193.64/26 via 211.230.193.129
 ```
 
 **Table de routage finale R1 & Vérification pings :**
@@ -142,7 +145,6 @@ Tous les pings répondent depuis les 3 routeurs.
 
 ## Section 2 — Traceroute
 
-> ⚠️ Captures Wireshark actives sur eth0 et eth1 de R1 avant de commencer.
 
 ---
 
@@ -150,17 +152,17 @@ Tous les pings répondent depuis les 3 routeurs.
 
 **Commande utilisée :**
 ```bash
-traceroute -q1 -N1 <IP_eth1_R3>
+traceroute -q1 -N1 211.230.193.193
 ```
 
 **Sortie de la commande :**
-<!-- Insérer capture ici -->
-
+![wireshark sur R2 trace](ressources/capture.png)
 ---
 
 ### Question 2 — Que renvoie traceroute ?
 
->
+> Liste des routeurs traversés avec leur IP et temps de réponse en ms.
+
 
 ---
 
@@ -168,30 +170,27 @@ traceroute -q1 -N1 <IP_eth1_R3>
 
 | Adresse IP renvoyée | Routeur | Interface |
 |---------------------|---------|-----------|
-| | | |
-| | | |
+| 211.230.193.1       |   R1    |  eth0     |
+| 211.230.193.193     |   R3    |  eth1     |
 
 ---
 
 ### Question 4 — TTL du 1er paquet envoyé par R2
 
 **Capture Wireshark (1er paquet) :**
-<!-- Insérer capture ici -->
+![Wireshark 1er paquet](ressources/TTL_R2.png)
 
 **Valeur du TTL :**
 
->
+> 1
 
 ---
 
 ### Question 5 — Que transporte ce paquet ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![contenu du paquet](ressources/UDP_contenu.png)
 
-**Réponse :**
-
->
 
 ---
 
@@ -199,41 +198,40 @@ traceroute -q1 -N1 <IP_eth1_R3>
 
 **Réponse :**
 
->
+> Non
 
 **Pourquoi :**
 
->
+> TTL = 1 décrémenté à 0 par R1 → R1 jette le paquet.
 
 ---
 
 ### Question 7 — Qui répond ? Quel message ?
 
 **Capture Wireshark de la réponse :**
-<!-- Insérer capture ici -->
-
+![reponse de R1](ressources/Reponse_R1.png)
 **Qui répond :**
 
->
+> R1
 
 **Protocole / Type / Code :**
 
->
+> ICMP / Type : 11 / Code : 0
 
 **Signification :**
 
->
+> Time to Live exceeded in transit
 
 ---
 
 ### Question 8 — TTL du 2ème paquet
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![second TTL](ressources/second_TTL.png)
 
 **Valeur du TTL :**
 
->
+> 2
 
 ---
 
@@ -241,42 +239,41 @@ traceroute -q1 -N1 <IP_eth1_R3>
 
 **Réponse :**
 
->
+> Oui
 
 **Pourquoi :**
 
->
+> TTL = 2, R1 le décrémente à 1 et le transmet à R3
 
 ---
 
 ### Question 10 — Qui répond ? Quel message ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
-
+![capture](ressources/Reponse_R3.png)
 **Qui répond :**
 
->
+> R3
 
 **Protocole / Type / Code :**
 
->
+> ICMP / Type : 3 / Code : 3
 
 **Signification :**
 
->
+> Destination unreachable — Port unreachable (le port UDP 33434 n'est pas ouvert sur R3)
 
 ---
 
 ### Question 11 — Messages permettant à traceroute de connaître les IPs des routeurs
 
->
+> Le message ICMP Type 11 Code 0 renvoyé par R1 pour le 1er paquet. L'adresse source de ce message ICMP est l'IP de R1 — c'est comme ça que traceroute sait qu'il y a un routeur R1 sur le chemin. 
 
 ---
 
 ### Question 12 — Pourquoi l'IP de eth0 de R3 n'est-elle pas renvoyée ?
 
->
+> eth0 de R3 est l'interface qui reçoit le 2ème paquet et Il répond avec ICMP Type 3 Code 3 depuis son interface eth1 , car c'est l'interface associée à l'adresse de destination demandée.
 
 ---
 
@@ -288,62 +285,61 @@ traceroute -q1 -N1 <IP_eth1_R3>
 
 **Commandes utilisées :**
 ```bash
-# Sur R1 :
+# Sur R1 : 
+ip link set dev eth1 mtu 1000
 
 # Sur R3 :
+ip link set dev eth0 mtu 1000
 ```
 
 **Vérification :**
-<!-- Insérer capture ici -->
-
+![verificatipn](ressources/3_1.png)
 ---
 
 ### Question 2 — Ping 1200 octets avec `-M dont` depuis R2
 
 **Commande utilisée :**
 ```bash
-ping -c1 -s 1200 -M dont <IP_réseau_B>
+ping -c1 -s 1200 -M dont 211.230.193.192
 ```
 
 **Sortie de ping :**
-<!-- Insérer capture ici -->
+![ping vers B](ressources/ping_B.png)
 
 **Ce qu'affiche la commande :**
 
->
+> From 211.230.193.130 icmp_seq=1 Destination Host Unreachable 1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
 
 ---
 
 ### Question 3 — La requête parvient-elle ? Différence avant/après R1 ?
 
 **Capture Wireshark eth0 de R1 (avant transmission) :**
-<!-- Insérer capture ici -->
+![eth0](ressources/eth0_3.png)
 
 **Capture Wireshark eth1 de R1 (après transmission) :**
-<!-- Insérer capture ici -->
+![eth1](ressources/eth1.png)
 
 **La requête parvient-elle à destination ?**
 
->
+> Non, la requête ne parvient pas à destination
 
 **Différence entre la requête envoyée par R2 et après transmission par R1 :**
 
->
+> Le lien entre R1 et R3 a un MTU inférieur à 1228 octets. Or l'option -M dont interdit la fragmentation. R1 se retrouve donc dans une situation impossible :le paquet est trop grand pour le lien vers R3, il n'a pas le droit de le fragmenter .R1 abandonne le paquet et renvoie à R2 un message ICMP Destination Host Unreachable . La requête n'arrive jamais jusqu'à R3.
 
 ---
 
 ### Question 4 — Différence sur la réponse ? R1 réassemble-t-il ?
 
-**Capture Wireshark :**
-<!-- Insérer capture ici -->
 
 **Y a-t-il une différence sur la réponse ?**
 
->
+> Cette question ne s'applique pas ici, car la requête n'ayant jamais atteint R3, il n'y a aucune réponse de R3. 
 
 **R1 réassemble-t-il le message ICMP ?**
 
->
+> R1 n'a donc pas réassemblé
 
 ---
 
@@ -351,45 +347,46 @@ ping -c1 -s 1200 -M dont <IP_réseau_B>
 
 **Commande utilisée :**
 ```bash
-ping -c1 -s 1200 <IP_réseau_B>
+ping -c1 -s 1200 211.230.193.192
 ```
 
 **Sortie de ping :**
-<!-- Insérer capture ici -->
+![ping](ressources/Snapshot_2026-04-02_11-54-14.png)
 
 **Ce qu'affiche la commande :**
 
->
+>PING 211.230.193.192 (211.230.193.192) 1200(1228) bytes of data.
+>From 211.230.193.1 icmp_seq=1 Frag needed and DF set (mtu = 1000)
+
+>-- 211.230.193.192 ping statistics ---
+>1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+
 
 ---
 
 ### Question 6 — La requête parvient-elle ? Valeur du flag DF ?
 
-**Capture Wireshark (flag DF dans l'entête IP) :**
-<!-- Insérer capture ici -->
+**Capture Wireshark  :**
+![DF](ressources/DF_1.png)
 
 **La requête parvient-elle ?**
 
->
+> Non.
 
 **Raison :**
 
->
-
-**Valeur du flag « don't fragment » :**
-
->
+> Malgré l'absence de -M dont, Linux positionne DF = 1 automatiquement. R1 ne peut donc toujours pas fragmenter.
 
 ---
 
 ### Question 7 — Quel avertissement R1 renvoie-t-il à R2 ?
 
 **Capture Wireshark du message ICMP :**
-<!-- Insérer capture ici -->
+![message](ressources/Fn.png)
 
 **Type / Code / Signification :**
 
->
+> "Fragmentation Needed and DF bit set, mtu = 1000" — ce qui indique que le prochain saut a un MTU de 1000 octets.
 
 ---
 
@@ -401,33 +398,33 @@ tracepath <IP_réseau_B>
 ```
 
 **Sortie de tracepath :**
-<!-- Insérer capture ici -->
+![traceopath](ressources/R2_tracepath.png)
 
 **Ce qu'affiche la commande :**
 
->
+> iste des sauts + détection du MTU
 
 ---
 
 ### Question 9 — Que transportent les paquets envoyés par R2 ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![contenu](ressources/contenu_R2.png)
 
 **Réponse :**
 
->
+> Paquets **UDP**
 
 ---
 
 ### Question 10 — Valeur du flag « don't fragment »
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![flag](ressources/valeur_flag.png)
 
 **Valeur du flag DF :**
 
->
+> 1
 
 ---
 
