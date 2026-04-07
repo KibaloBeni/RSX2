@@ -448,10 +448,10 @@ Tracepath envoie des paquets UDP avec **DF=1** et **TTL croissant** + **taille c
 ip route del <réseau>/24
 
 # Sur chaque routeur, lancer Quagga/Zebra :
-ls /var/run/frr/zebra.pid      # vérifier si zebra tourne
-/usr/lib/frr/zebra -d          # lancer si fichier absent
-/usr/lib/frr/ripd -d           # lancer ripd
-vtysh                          # se connecter au shell
+ls /var/run/frr/zebra.pid  
+/usr/lib/frr/zebra -d
+/usr/lib/frr/ripd -d  
+vtysh         
 ```
 
 > Vérifier que les captures Wireshark sont actives.  
@@ -465,7 +465,7 @@ vtysh                          # se connecter au shell
 # Dans vtysh sur R1 :
 configure terminal
 router rip
-network <réseau_a>/24
+network 211.230.193.0/26
 exit
 ```
 **Résultat attendu :** Messages **RIP Request** visibles dans Wireshark sur eth0 de R1.

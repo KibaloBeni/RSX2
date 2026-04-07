@@ -4,19 +4,6 @@
 
 ---
 
-## Plan d'adressage IPv4 (à remplir dès le début, garder sous la main)
-
-| Routeur | Interface | Réseau | Adresse IP/CIDR |
-|---------|-----------|--------|-----------------|
-| R1 | eth0 | a | |
-| R1 | eth1 | b | |
-| R2 | eth0 | a | |
-| R2 | eth1 | A | |
-| R3 | eth0 | b | |
-| R3 | eth1 | B | |
-
----
-
 ## Section 1 — Routage statique
 
 ---
@@ -394,7 +381,7 @@ ping -c1 -s 1200 211.230.193.192
 
 **Commande utilisée :**
 ```bash
-tracepath <IP_réseau_B>
+tracepath 211.230.193.193
 ```
 
 **Sortie de tracepath :**
@@ -570,9 +557,6 @@ tracepath <IP_réseau_B>
 
 ## Section 4 — RIP
 
-> ⚠️ Routes statiques supprimées, Quagga/Zebra lancé sur les 3 routeurs, filtre Wireshark `rip` activé.
-
----
 
 ### Question 1 — Activer RIP sur réseau a depuis R1
 
@@ -580,58 +564,53 @@ tracepath <IP_réseau_B>
 ```
 configure terminal
 router rip
-network <réseau_a>/24
+network 211.230.193.0/24
 exit
 ```
 
 **Capture Wireshark après activation :**
-<!-- Insérer capture ici -->
+![request](ressources/RIP_request.png)
 
 **Constat :**
 
->
+>  Messages RIP Request visibles dans Wireshark sur eth0 de R1.
 
 ---
 
 ### Question 2 — Couche OSI, protocole transport, ports, adresse destination
 
-**Capture Wireshark (détail du paquet RIP) :**
-<!-- Insérer capture ici -->
-
 **Couche OSI :**
 
->
+> Couche application
 
 **Protocole de couche transport :**
 
->
+> UDP
 
 **Ports source / destination :**
 
->
+> Port source : 520 / destination : 520
 
 **Adresse IP de destination :**
 
->
+> 224.0.0.9
 
 **Ce que représente cette adresse :**
 
->
+> Groupe multicast de tous les routeurs RIP 
 
 ---
 
 ### Question 3 — Command RIP et version
 
-**Capture Wireshark :**
-<!-- Insérer capture ici -->
 
 **Command :**
 
->
+> Request (1)
 
 **Version :**
 
->
+> RIPv2 (2)
 
 ---
 
@@ -641,38 +620,38 @@ exit
 ```
 configure terminal
 router rip
-network <réseau_b>/24
+network 211.230.193.128/26
 exit
 ```
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![activation RIP](ressources/RIP_Q3.png)
 
 **Constat :**
 
->
+> Des messages RIPv2 Response apparaissent (paquets 10, 11, 14, 15, 16, 17, 18...) en provenance de 211.230.193.1 (R1) vers 224.0.0.9.
 
 **Fréquence d'envoi des messages :**
 
->
+> paquet 10 à 909s, paquet 14 à 924s, paquet 15 à 953s, paquet 16 à 989s, paquet 17 à 1019s, paquet 18 à 1047s. L'écart entre les groupes est d'environ 30 secondes 
 
 ---
 
 ### Question 5 — Contenu des réponses RIP sur a et sur b
 
 **Capture Wireshark réponses sur a :**
-<!-- Insérer capture ici -->
+![rip_1](ressources/Routing_RIP1.png)
 
 **Capture Wireshark réponses sur b :**
-<!-- Insérer capture ici -->
+![rip_2](ressources/Routing_RIP2.png)
 
 **Contenu sur a :**
 
->
+> Sur a (eth0) → R1 annonce le réseau b (211.230.193.128/26) avec métrique 1
 
 **Contenu sur b :**
 
->
+>Sur a (eth0) → R1 annonce le réseau b (211.230.193.0/26) avec métrique 1
 
 ---
 
@@ -682,8 +661,8 @@ exit
 ```
 configure terminal
 router rip
-network <réseau_a>/24
-network <réseau_A>/24
+network 211.230.193.0/26
+network 211.230.193.64/26
 exit
 ```
 
@@ -691,78 +670,68 @@ exit
 ```
 configure terminal
 router rip
-network <réseau_b>/24
-network <réseau_B>/24
+network 211.230.193.128/26
+network 211.230.193.192/26
 exit
 ```
 
 **Capture Wireshark (message de requête) :**
-<!-- Insérer capture ici -->
+![message](ressources/Q6.png)
 
 **Intérêt du message de requête :**
 
->
+> Au lieu d'attendre 30 secondes pour recevoir une mise à jour non sollicitée, R2 envoie immédiatement un Request dès l'activation de RIP pour obtenir les routes de ses voisins tout de suite. Ça accélère la convergence du réseau.
 
 ---
 
 ### Question 7 — Différences entre réponses RIP de R1 et sa table de routage
 
-**Table de routage R1 (`show ip route`) :**
-<!-- Insérer capture ici -->
-
-**Capture Wireshark réponses RIP de R1 :**
-<!-- Insérer capture ici -->
+**Table de routage R1 (`show ip route`) Capture Wireshark réponses RIP de R1 :**
+![capture](ressources/Q7.png)
 
 **Différences constatées :**
 
->
+> R1 n'annonce pas le réseau a (211.230.193.0/26) dans sa réponse sur eth0 / R1 n'annonce pas le réseau A (211.230.193.64/26) non plus / La métrique de B est 2 dans l'annonce alors qu'elle est 1 dans la table
 
 **Pourquoi ces différences (explication du mécanisme) :**
 
->
+> split horizon (pas d'annonce d'une route sur l'interface depuis laquelle elle a été apprise) / même raison, il l'a appris depuis eth0 / R1 incrémente la métrique de +1 avant d'annoncer
 
 ---
 
 ### Question 8 — Métriques
 
-**Capture Wireshark annonces de R2 :**
-<!-- Insérer capture ici -->
-
-**Capture Wireshark annonces de R1 :**
-<!-- Insérer capture ici -->
+**Capture Wireshark :**
+![capture](ressources/Q8.png)
+![capture](ressources/Q8_metric.png)
 
 **Métrique de A dans les annonces de R2 :**
 
->
+> 1
 
 **Métrique de A dans les annonces de R1 :**
 
->
+> 2
 
 **Métrique de A dans les annonces de R3 (selon vous) :**
 
->
+> 3
 
 **À quoi correspond la métrique :**
 
->
+> La métrique = nombre de sauts
 
 ---
 
 ### Question 9 — Tables de routage et métriques
 
-**Table de routage R1 :**
-<!-- Insérer capture ici -->
+**Table de routage :**
+![table](ressources/ip_show.png)
 
-**Table de routage R2 :**
-<!-- Insérer capture ici -->
-
-**Table de routage R3 :**
-<!-- Insérer capture ici -->
 
 **Si on ajoutait un lien direct R2-R3, quelle serait la métrique de A sur R3 ?**
 
->
+>  la métrique de A sur R3 serait 2 (directement via R2, sans passer par R1).
 
 ---
 
@@ -774,23 +743,26 @@ ip link set dev eth1 down
 ```
 
 **Capture Wireshark (messages RIP après panne) :**
-<!-- Insérer capture ici -->
+![messages RIP](ressources/panne.png)
 
 **Constat sur les messages RIP reçus et envoyés par R1 :**
 
->
+> R1 ne reçoit plus rien de R2 concernant A
+> R1 n'annonce plus le réseau A dans ses propres réponses
+> R1 a donc retiré A de sa table de routage et ne le propage plus à R3
 
 **Métrique associée au réseau A inaccessible :**
 
->
+> 16
 
 **Pourquoi cette valeur est-elle utilisée ? Que signifie-t-elle ?**
 
->
+> Dans RIP, 16 est la valeur conventionnelle pour signifier "infini" — c'est le mécanisme de poison reverse. RIP ne peut pas avoir de routes avec plus de 15 sauts, donc 16 = inaccessible.
+> Le réseau A est inaccessible depuis R2.
 
 **Délai entre la panne et la suppression de la route vers A dans R3 :**
 
->
+> environ 180 sec
 
 ---
 
@@ -798,16 +770,22 @@ ip link set dev eth1 down
 
 **Commandes utilisées :**
 ```bash
-ip link set dev eth1 up   # remettre eth1
-ip link set dev eth0 down  # désactiver eth0
+ip link set dev eth1 up   
+ip link set dev eth0 down 
 ```
 
 **Capture Wireshark (surveillance des annonces de R1) :**
-<!-- Insérer capture ici -->
+![surveillance](ressources/Q11.png)
 
 **Au bout de combien de temps R1 considère A inaccessible (timeout) :**
 
->
+> Timeout de R1 : ~180 secondes 
+>Dans Wireshark, le dernier message RIP de R2 (211.230.193.2) est le paquet 193 à t = 3832s.
+>Dans le terminal R1, en suivant les show ip route successifs :
+
+>À 01:18:21 → R* 211.230.193.64/26 still présent
+>À 01:18:22 → R* 211.230.193.64/26 still présent
+>À 01:19:33 → R* 211.230.193.64/26 disparue !
 
 ---
 
@@ -815,7 +793,10 @@ ip link set dev eth0 down  # désactiver eth0
 
 **Commandes de lancement et configuration de PIRATE :**
 ```bash
-# À compléter
+vstart -D PIRATE --eth0=A
+# Configurer eth0 avec une IP dans le réseau A (211.230.193.64/26)
+ip address add 211.230.193.100/26 dev eth0
+ip link set dev eth0 up
 ```
 
 **Commande création dummy0 :**
@@ -823,19 +804,15 @@ ip link set dev eth0 down  # désactiver eth0
 ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
 ```
 
-**Table de routage R2 avant PIRATE :**
-<!-- Insérer capture ici -->
-
-**Table de routage R2 après activation RIP sur PIRATE :**
-<!-- Insérer capture ici -->
+![route](ressources/PvsR2.png)
 
 **Constat concernant le réseau B :**
 
->
+>  R2 a maintenant une route vers le réseau B (211.230.193.192/26) via 211.230.193.100 (PIRATE) avec métrique 1, au lieu de passer par R1. PIRATE a réussi à usurper la route vers B en annonçant frauduleusement ce réseau via RIP.
 
 **Comment remédier à ce problème :**
 
->
+> Configurer l'authentification MD5 sur les échanges RIP pour que les routeurs n'acceptent que les annonces de voisins de confiance :
 
 ---
 
