@@ -1,6 +1,5 @@
 # Compte-rendu — TP Routage RSX2
-**Nom / Prénom :*TAGBA KIBALO BENI*  
-**Binôme :*REGUII Bilel*  
+**Nom / Prénom :** TAGBA KIBALO BENI
 
 ---
 
@@ -178,6 +177,7 @@ traceroute -q1 -N1 211.230.193.193
 **Capture Wireshark :**
 ![contenu du paquet](ressources/UDP_contenu.png)
 
+> Une sonde UDP, port destination 33434
 
 ---
 
@@ -418,37 +418,37 @@ tracepath 211.230.193.193
 ### Question 11 — Différences dans l'entête IP des paquets successifs
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![capture](ressources/reprise.png)
 
 | N° paquet | TTL | Taille |
 |-----------|-----|--------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
+| 12 (UDP)  | 1   | 1514 (Len=1472)|
+| 14 (UDP)  | 2   | 1514 (Len=1472)|
+| 16 (UDP)  | 2   |1514 (Len=1472) |
+| 18 (UDP)  | 2   |1014 (Len=972) |
 
 **Différences constatées :**
 
->
+> TTL augmente de 1 à chaque nouvelle tentative et La taille diminue après détection du MTU (1514 → 1014)
 
 ---
 
 ### Question 12 — Qui répond aux 2 premiers paquets ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![capture](ressources/filter.png)
 
 **Qui répond :**
 
->
+> R1 (211.230.193.1)
 
 **Protocole / Type / Code :**
 
->
+> ICMP / type : 11 / Code : 0
 
 **Signification :**
 
->
+> Time-to-live exceeded (paquet 13 et 15)
 
 ---
 
@@ -456,30 +456,30 @@ tracepath 211.230.193.193
 
 **Réponse :**
 
->
+> Non
 
 **Pourquoi :**
 
->
+> TTL expire chez R1 pour le 1er, et R1 bloque le 2ème car trop grand (>1000) avec DF=1.
 
 ---
 
 ### Question 14 — Qui répond au 3ème paquet ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![capture](ressources/34.png)
 
 **Qui répond :**
 
->
+> R1 (211.230.193.1)
 
 **Protocole / Type / Code :**
 
->
+> ICMP / Type : 3 / Code : 4
 
 **Signification :**
 
->
+> Destination unreachable — Fragmentation needed (paquet 17)
 
 ---
 
@@ -487,30 +487,30 @@ tracepath 211.230.193.193
 
 **Réponse :**
 
->
+> Non 
 
 **Pourquoi :**
 
->
+> taille 1514 > MTU 1000 avec DF=1, R1 le bloque.
 
 ---
 
 ### Question 16 — Qui répond au 4ème paquet ?
 
 **Capture Wireshark :**
-<!-- Insérer capture ici -->
+![capture](ressources/4_paq.png)
 
 **Qui répond :**
 
->
+> R3 (211.230.193.193)
 
 **Protocole / Type / Code :**
 
->
+> ICMP / Type : 3 / Code : 3
 
 **Signification :**
 
->
+> Destination unreachable — Port unreachable (paquet 19)
 
 ---
 
@@ -518,40 +518,52 @@ tracepath 211.230.193.193
 
 **Réponse :**
 
->
+> Oui
 
 **Pourquoi :**
 
->
+> taille réduite à 1014 ≤ 1000 octets, le paquet passe enfin.
 
 ---
 
 ### Question 18 — Comment tracepath a su que le MTU de b est 1000 ?
 
-**Capture Wireshark (champ Next-Hop MTU dans le message ICMP) :**
-<!-- Insérer capture ici -->
+**Capture Wireshark :**
+![capture du champs](ressources/MTU.png)
 
 **Explication :**
 
->
+>  "MTU of next hop: 1000" — c'est ce champ (RFC 1191) que tracepath lit pour connaître le MTU de la liaison b.
 
 ---
 
 ### Question 19 — Résumé du fonctionnement de tracepath
 
->
+>Tracepath envoie des sondes UDP avec DF=1 et TTL croissant et taille croissante :
+
+>Les ICMP Type 11 révèlent les routeurs intermédiaires
+
+>Les ICMP Type 3 Code 4 révèlent le MTU de chaque liaison via le champ Next-Hop MTU
+
+>Tracepath adapte ensuite la taille des paquets au MTU détecté
+
+>Quand ICMP Port Unreachable est reçu, la destination est atteinte
 
 ---
 
 ### Question 20 — Similitudes entre traceroute et tracepath
 
->
+>Les deux utilisent TTL croissant et les deux lisent les ICMP Type 11 pour identifier les routeurs intermédiaires
 
 ---
 
 ### Question 21 — Différences entre traceroute et tracepath
 
->
+|              |traceroute         |tracepath                 |
+|--------------|-------------------|--------------------------|
+|Détection MTU |Non                |Oui                       |
+|Taille paquets|Fixe               |Croissante puis adaptée   |
+|Info affichée |Routeurs + latences|Routeurs + latences + pmtu|
 
 ---
 
@@ -651,7 +663,7 @@ exit
 
 **Contenu sur b :**
 
->Sur a (eth0) → R1 annonce le réseau b (211.230.193.0/26) avec métrique 1
+> Sur b (eth1) → R1 annonce le réseau a (211.230.193.0/26) avec métrique 1
 
 ---
 
@@ -801,7 +813,9 @@ ip link set dev eth0 up
 
 **Commande création dummy0 :**
 ```bash
-ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
+ip link add dummy0 type dummy
+ip address add 211.230.193.200/26 dev dummy0
+ip link set dev dummy0 up
 ```
 
 ![route](ressources/PvsR2.png)
@@ -818,7 +832,7 @@ ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
 
 ## Section 5 — NAT (bonus)
 
-> ⚠️ Routeurs précédents arrêtés. Nouveaux routeurs lancés : box, PC, R-FAI.
+> Routeurs précédents arrêtés. Nouveaux routeurs lancés : box, PC, R-FAI.
 
 ---
 
@@ -826,16 +840,22 @@ ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
 
 | Machine | Interface | Réseau | Adresse IP/CIDR |
 |---------|-----------|--------|-----------------|
-| PC | eth0 | L1 (interne) | |
-| box | eth1 | L1 (interne) | |
+| PC      | eth0      | L1 (interne) | 192.168.1.2/24|
+| box     | eth1      | L1 (interne) | 192.168.1.1/24 |
 
 **Commandes de configuration :**
 ```bash
-# À compléter
+# sur PC 
+ip address add 192.168.1.2/24 dev eth0
+ip link set dev eth0 up
+
+# sur Box
+ip address add 192.168.1.1/24 dev eth1
+ip link set dev eth1 up
 ```
 
 **Vérification :**
-<!-- Insérer capture ici -->
+![verification](ressources/verification.png)
 
 ---
 
@@ -843,16 +863,22 @@ ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
 
 | Machine | Interface | Réseau | Adresse IP/CIDR |
 |---------|-----------|--------|-----------------|
-| box | eth0 | L2 (externe) | |
-| R-FAI | eth0 | L2 (externe) | |
+| box     | eth0      | L2 (externe) |203.0.113.1/24 |
+| R-FAI   | eth0      | L2 (externe) |203.0.113.254/24 |
 
 **Commandes de configuration :**
 ```bash
-# À compléter
+# sur Box
+ip address add 203.0.113.1/24 dev eth0
+ip link set dev eth0 up
+
+# Sur R-FAI
+ip address add 203.0.113.254/24 dev eth0
+ip link set dev eth0 up
 ```
 
 **Vérification :**
-<!-- Insérer capture ici -->
+![verification](ressources/v2.png)
 
 ---
 
@@ -863,10 +889,12 @@ ifconfig dummy0 <IP_dans_B> netmask 255.255.255.0 up
 echo 1 > /proc/sys/net/ipv4/ip_forward
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 ```
+![config](ressources/config_box.png)
 
 **Explication de la règle :**
 
->
+> echo 1 > /proc/sys/net/ipv4/ip_forward Active le forwarding IP sur box — sans ça, Linux ignore les paquets qui ne lui sont pas destinés et ne les transmet pas entre ses interfaces. 
+> iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE Configure le NAT : juste avant d'envoyer un paquet sur eth0 (réseau public), box remplace l'adresse source privée du PC (192.168.1.2) par sa propre adresse publique (203.0.113.1). Elle mémorise cette translation pour faire l'opération inverse sur les réponses de retour.
 
 ---
 
@@ -874,52 +902,42 @@ iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
 **Routes configurées sur PC :**
 ```bash
-# À compléter
-```
-
-**Routes configurées sur box :**
-```bash
-# À compléter
+ip route add default via 192.168.1.1
 ```
 
 **Routes configurées sur R-FAI :**
 ```bash
-# À compléter
+ip route add default via 203.0.113.1
 ```
 
-**Explication :**
-
->
+![ping reussi](ressources/config.png)
 
 ---
 
 ### Question 5 — Captures et analyse NAT
 
-**Capture Wireshark eth1 de box (côté PC) :**
-<!-- Insérer capture ici -->
-
-**Capture Wireshark eth0 de box (côté R-FAI) :**
-<!-- Insérer capture ici -->
+**Capture Wireshark eth1 et eth0 de box :**
+![capture](ressources/NAT_5.png)
 
 **Adresse source du paquet reçu de PC :**
 
->
+> 192.168.1.2
 
 **Adresse source du paquet envoyé vers R-FAI :**
 
->
+> 203.0.113.1
 
 **Adresse de destination de la réponse de R-FAI :**
 
->
+> 203.0.113.1
 
 **Adresse de la réponse envoyée par box vers PC :**
 
->
+> 192.168.1.2
 
 **Conclusion sur l'intérêt du NAT :**
 
->
+> Le NAT permet à des machines avec des adresses IP privées de communiquer avec l'extérieur via une seule adresse IP publique. Il masque la topologie du réseau interne et permet d'économiser les adresses IP publiques.
 
 ---
 
@@ -932,12 +950,9 @@ nc -lp 8080
 
 **Règle iptables DNAT sur box :**
 ```bash
-iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination <IP_PC>:8080
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 192.168.1.2:8080
 ```
 
-**Explication :**
-
->
 
 ---
 
@@ -945,19 +960,23 @@ iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination
 
 **Commandes utilisées :**
 ```bash
-nmap <IP_externe_box> -p 80
-telnet <IP_externe_box> 80
+nmap 203.0.113.1 -p 80
+telnet 203.0.113.1 80
 ```
 
 **Capture / sortie nmap :**
-<!-- Insérer capture ici -->
+![capture](ressources/nmap.png)
 
 **Capture / sortie telnet :**
-<!-- Insérer capture ici -->
+![capture](ressources/telnet.png)
 
 **Résultat et conclusion :**
 
->
+> Sortie nmap : port 80 = open sur 203.0.113.1
+
+> Connexion telnet : réussie — telnet se connecte à l'IP publique de box (203.0.113.1:80), box redirige via DNAT vers PC (192.168.1.2:8080) où nc reçoit la connexion.
+
+> Conclusion : Le port forwarding (DNAT) permet de rendre accessible depuis l'extérieur un service interne en redirigeant les connexions entrantes sur un port public vers une machine du réseau privé — sans exposer directement cette machine sur Internet.
 
 ---
 
